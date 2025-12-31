@@ -33,17 +33,16 @@ class Web(internal.Web):
     def get(self, environ, base_prefix, path, user):
         extra = ()
         if path == "/.web/infcloud/" or path.startswith("/.web/infcloud"):
-            status, headers, answer = httputils.serve_resource(
+            response = httputils.serve_resource(
                 "radicale_infcloud", "web", base_prefix, path,
                 "/.web/infcloud")
-            if version("radicale").split(".")[0] >= "3":
-                extra = (None,)
         else:
             response = super().get(environ, base_prefix, path, user)
-            status = response[0]
-            headers = response[1]
-            answer = response[2]
-            extra = response[3:]
+
+        status = response[0]
+        headers = response[1]
+        answer = response[2]
+        extra = response[3:]
 
         if status == client.OK and path in ("/.web/", "/.web/index.html"):
             if version("radicale") >= "3.2.0":
@@ -61,4 +60,7 @@ class Web(internal.Web):
         if status == client.OK and path == "/.web/infcloud/config.js":
             answer += self.configuration.get("web", "infcloud_config").encode()
             
+        if version("radicale").startswith("3") and not extra:
+            extra = (None,)
+
         return (status, headers, answer) + extra
