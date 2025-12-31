@@ -31,15 +31,22 @@ class Web(internal.Web):
         super().__init__(configuration.copy(PLUGIN_CONFIG_SCHEMA))
 
     def get(self, environ, base_prefix, path, user):
+        extra = ()
         if path == "/.web/infcloud/" or path.startswith("/.web/infcloud"):
             status, headers, answer = httputils.serve_resource(
                 "radicale_infcloud", "web", base_prefix, path,
                 "/.web/infcloud")
+            if version("radicale").split(".")[0] >= "3":
+                extra = (None,)
         else:
-            status, headers, answer = super().get(
-                environ, base_prefix, path, user)
+            response = super().get(environ, base_prefix, path, user)
+            status = response[0]
+            headers = response[1]
+            answer = response[2]
+            extra = response[3:]
+
         if status == client.OK and path in ("/.web/", "/.web/index.html"):
-            if version("radicale") >="3.2.0":
+            if version("radicale") >= "3.2.0":
                 answer = answer.replace(b"""title="Refresh">Refresh</a>""",
                                         b"""title="Refresh">Refresh</a>
       <a class="blue" data-name="infcloud" title="InfCloud" style="float: left;left: 40px;" href="infcloud">InfCloud</a>""")
@@ -50,6 +57,8 @@ class Web(internal.Web):
 <nav>
     <ul>
         <li><a href="infcloud">InfCloud</a></li>""")
+        
         if status == client.OK and path == "/.web/infcloud/config.js":
             answer += self.configuration.get("web", "infcloud_config").encode()
-        return status, headers, answer
+            
+        return (status, headers, answer) + extra
