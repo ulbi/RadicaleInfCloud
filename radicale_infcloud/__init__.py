@@ -30,14 +30,17 @@ class Web(internal.Web):
     def __init__(self, configuration):
         super().__init__(configuration.copy(PLUGIN_CONFIG_SCHEMA))
 
-    def get(self, environ, base_prefix, path, user):
+    def get(self, environ, base_prefix, path, user, request_info=None):
         extra = ()
         if path == "/.web/infcloud/" or path.startswith("/.web/infcloud"):
             response = httputils.serve_resource(
                 "radicale_infcloud", "web", base_prefix, path,
                 "/.web/infcloud")
         else:
-            response = super().get(environ, base_prefix, path, user)
+            if request_info is not None:
+                response = super().get(environ, base_prefix, path, user, request_info)
+            else:
+                response = super().get(environ, base_prefix, path, user)
 
         status = response[0]
         headers = response[1]
